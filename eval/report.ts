@@ -134,12 +134,17 @@ export function renderResultsMarkdown(report: EvaluationReport): string {
     [
       '## 3. الأداء',
       '',
-      `- **زمن المعالجة لكل 1000 عملية: ${report.msPer1000.toFixed(1)} مللي ثانية**`,
-      `- الزمن الكلي لمعالجة ${report.totalTransactions} عملية: ${report.totalMs.toFixed(1)} مللي ثانية`,
+      `- **زمن المعالجة لكل 1000 عملية: ${report.msPer1000.toFixed(0)} مللي ثانية**`,
+      `- وسيط ${report.timingRepeats} تشغيلات؛ المدى بينها ` +
+        `${report.msPer1000Range.fastest.toFixed(0)}–${report.msPer1000Range.slowest.toFixed(0)} مللي ثانية`,
       '',
       'القياس يشمل خط المعالجة كاملاً (فكّ الترميز، تحليل CSV، كشف التنسيق،',
-      'توحيد أسماء التجّار، ومحرك الكشف) على معالج جهاز التطوير، بلا تفريغ للذاكرة',
-      'المؤقتة بين الكشوف.',
+      'توحيد أسماء التجّار، ومحرك الكشف) على معالج جهاز التطوير.',
+      '',
+      '**الوسيط لا المتوسط** — لنفس السبب الذي يقوم عليه المحرك: التشغيلة الأولى',
+      'تدفع ثمن تسخين مترجم JIT، وأي نشاط عابر على الجهاز يلوّث تشغيلة بعينها.',
+      'المتوسط ينجرف خلفهما، والوسيط لا. والمدى معروض بجانبه حتى لا يُقرأ الرقم',
+      'كأنه ثابت فيزيائي: **هو خاصية جهاز القياس بقدر ما هو خاصية الكود**.',
     ].join('\n'),
   );
 
@@ -291,7 +296,8 @@ export function renderConsoleSummary(report: EvaluationReport): string {
     `  تجربة متحوّلة   : ${percent(report.freeTrial.recall)} (${report.freeTrial.correctlyFlagged}/${report.freeTrial.expected})`,
     `  كشف التنسيق     : ${percent(report.adapterDetectionRatio)}`,
     '  ─────────────────────────────────',
-    `  زمن لكل 1000    : ${report.msPer1000.toFixed(1)} مللي ثانية`,
+    `  زمن لكل 1000    : ${report.msPer1000.toFixed(0)} مللي ثانية ` +
+      `(وسيط ${report.timingRepeats}، المدى ${report.msPer1000Range.fastest.toFixed(0)}–${report.msPer1000Range.slowest.toFixed(0)})`,
     '══════════════════════════════════════',
     '',
   ].join('\n');

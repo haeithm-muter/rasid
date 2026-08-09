@@ -151,9 +151,12 @@ export type EvaluationReport = {
   cycle: CycleAccuracy;
   priceIncrease: FlagAccuracy;
   freeTrial: FlagAccuracy;
-  /** زمن خط المعالجة الكامل (استيراد + كشف) لكل 1000 عملية. */
+  /** زمن خط المعالجة الكامل (استيراد + كشف) لكل 1000 عملية — وسيط التكرارات. */
   msPer1000: number;
-  totalMs: number;
+  /** أسرع وأبطأ تكرار — يُعرض حتى لا يُقرأ الوسيط كأنه رقم قاطع. */
+  msPer1000Range: { fastest: number; slowest: number };
+  /** عدد مرات إعادة القياس. */
+  timingRepeats: number;
   missed: MissedCase[];
   falsePositives: FalsePositiveCase[];
   sweep: SweepPoint[];
@@ -447,6 +450,15 @@ function cycleAccuracy(matches: readonly CandidateMatch[]): CycleAccuracy {
   };
 }
 
+/**
+ * ▲ ثابت ▲ عدد مرات إعادة قياس الزمن.
+ *
+ * قياس واحد لا يكفي: التشغيلة الأولى تدفع ثمن تسخين مترجم JIT وتخصيص الذاكرة،
+ * وأي نشاط آخر على الجهاز يلوّثها. لوحظ فرق يبلغ ثلاثة أضعاف بين تشغيلتين
+ * متتاليتين على نفس الجهاز ونفس البيانات — وهو ما يجعل الرقم المفرد بلا معنى.
+ */
+export const TIMING_REPEATS = 5;
+
 /** ▲ ثابت ▲ العتبات التي يمسحها التقرير — منها تُعايَر عتبة `decision.ts`. */
 export const SWEEP_THRESHOLDS: readonly number[] = [
   0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9,
@@ -472,12 +484,21 @@ export function runEvaluation(options: EvaluationOptions): EvaluationReport {
   const threshold = options.threshold ?? SUBSCRIPTION_CONFIDENCE_THRESHOLD;
   const corpus = generateCorpus(options.size ?? CORPUS_SIZE);
 
-  const started = performance.now();
   const analyzed = corpus.map((statement) => analyzeStatement(statement));
-  const totalMs = performance.now() - started;
 
   const totalTransactions = analyzed.reduce((sum, item) => sum + item.summary.transactions, 0);
   const totalRows = analyzed.reduce((sum, item) => sum + item.summary.rows, 0);
+
+  // ─── قياس الزمن: تكرارات ثم **وسيطها** لا متوسطها ───────────────────────
+  // نفس المبدأ الذي يقوم عليه المحرك كلّه (`stats.ts`): تشغيلة واحدة بطيئة
+  // بسبب نشاط عابر على الجهاز تجرّ المتوسط خلفها، ولا تحرّك الوسيط.
+  const samples: number[] = [];
+  for (let repeat = 0; repeat < TIMING_REPEATS; repeat += 1) {
+    const started = performance.now();
+    for (const statement of corpus) analyzeStatement(statement);
+    samples.push(((performance.now() - started) / totalTransactions) * 1000);
+  }
+  samples.sort((left, right) => left - right);
 
   // العتبة المعتمدة: الأرقام الرئيسية وجداول الأخطاء
   const missed: MissedCase[] = [];
@@ -556,8 +577,12 @@ export function runEvaluation(options: EvaluationOptions): EvaluationReport {
       (seed) => seed.isFreeTrialConverted,
       (candidate) => candidate.flags.includes('free-trial-converted'),
     ),
-    msPer1000: ratio(totalMs, totalTransactions) * 1000,
-    totalMs,
+    msPer1000: samples[Math.floor(samples.length / 2)] ?? 0,
+    msPer1000Range: {
+      fastest: samples[0] ?? 0,
+      slowest: samples[samples.length - 1] ?? 0,
+    },
+    timingRepeats: TIMING_REPEATS,
     missed,
     falsePositives,
     sweep,
