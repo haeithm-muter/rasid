@@ -1,0 +1,72 @@
+# النشر على GitHub Pages بعد نجاح الفحص على الفرع الرئيسي.
+#
+# الاعتماد على `workflow_run` لا على خطوة نشر داخل CI مقصود: بهذا لا يمكن أن
+# يُنشر بناءٌ لم تنجح اختباراته — النشر لا يبدأ أصلاً إلا بعد أن ينتهي CI
+# بنتيجة `success` على `main`.
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+# `pages` و`id-token` لازمتان لنشر Pages الرسمي.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# نشرة واحدة في كل وقت، ولا تُلغى في منتصفها حتى لا يبقى الموقع نصف محدَّث.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: بناء الموقع
+    runs-on: ubuntu-latest
+    # لا ننشر إلا إذا نجح CI فعلاً (أو شُغّل النشر يدوياً)
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: جلب الشيفرة
+        uses: actions/checkout@v4
+
+      - name: تهيئة Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: تثبيت الاعتماديات
+        run: npm ci
+
+      - name: البناء
+        run: npm run build
+
+      - name: تهيئة Pages
+        uses: actions/configure-pages@v5
+
+      # `base: './'` في `vite.config.ts` يجعل المسارات نسبية، فيعمل الموقع من
+      # مسار المستودع الفرعي (`/rasid/`) بلا أي إعداد إضافي هنا.
+      - name: رفع الملفات المبنيّة
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: النشر
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: النشر على GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

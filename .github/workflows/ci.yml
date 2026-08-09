@@ -1,0 +1,61 @@
+# التكامل المستمر: يشغّل فحص الأنواع والاختبارات والبناء على كل دفعة.
+#
+# مقصود أن يكون هذا الملف هو **نفس** ما يشغّله المطوّر محلياً بالضبط، لا نسخة
+# مبسّطة منه: أي فرق بين الاثنين يعني أن الأخضر هنا لا يضمن شيئاً هناك.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  # يسمح بالتشغيل اليدوي من صفحة Actions
+  workflow_dispatch:
+
+# قراءة المستودع تكفي؛ لا يحتاج الفحص أي صلاحية كتابة.
+permissions:
+  contents: read
+
+# دفعة جديدة على نفس الفرع تلغي التشغيل السابق بدل أن تصطفّ خلفه.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: فحص الأنواع والاختبارات والبناء
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: جلب الشيفرة
+        uses: actions/checkout@v4
+
+      - name: تهيئة Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` لا `npm install`: يثبّت ما في `package-lock.json` حرفياً،
+      # فلا يتغيّر ما يُختبر هنا عمّا يعمل على جهاز المطوّر.
+      - name: تثبيت الاعتماديات
+        run: npm ci
+
+      - name: الاختبارات
+        run: npm run test
+
+      # `npm run build` يشغّل `tsc -b` أولاً، فيغطي فحص الأنواع للمشروع كاملاً
+      # (التطبيق والاختبارات ومجلد التقييم) قبل التحزيم.
+      - name: فحص الأنواع والبناء
+        run: npm run build
+
+      # التقييم الكمّي جزء من الفحص لا ملحق اختياري: لو انكسر مولّد البيانات
+      # أو خط المعالجة، يجب أن يظهر ذلك هنا لا عند كتابة README.
+      - name: التقييم الكمّي
+        run: npm run eval
+
+      - name: رفع نتائج التقييم كأثر
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: eval/RESULTS.md
+          if-no-files-found: error

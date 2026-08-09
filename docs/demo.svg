@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 470" width="820" height="470"
+     role="img" aria-labelledby="demo-title demo-desc" font-family="system-ui, 'Segoe UI', 'Noto Sans Arabic', Tahoma, sans-serif">
+  <title id="demo-title">رصيد — الحالات الثلاث: الاستقبال، المعالجة، النتائج</title>
+  <desc id="demo-desc">
+    رسم متحرك يوضّح استخدام رصيد في ثلاث خطوات: إفلات ملف CSV في شاشة الاستقبال،
+    ثم شريط تقدّم أثناء المعالجة داخل المتصفح، ثم شاشة النتائج التي تعرض الكلفة
+    الشهرية والسنوية وعدد الاشتراكات مع رسم توزيع الكلفة وجدول الاشتراكات
+    المكتشفة موسوماً بزيادات الأسعار والتجارب المتحوّلة. الأرقام المعروضة هي
+    مخرجات زرّ البيانات التجريبية فعلياً.
+  </desc>
+
+  <style>
+    /* الحلقة كاملة 12 ثانية: أربع لكل حالة، مع تلاشٍ قصير بينها. */
+    .frame { animation-duration: 12s; animation-iteration-count: infinite; animation-timing-function: linear; }
+    .f1 { animation-name: show1; }
+    .f2 { animation-name: show2; opacity: 0; }
+    .f3 { animation-name: show3; opacity: 0; }
+
+    @keyframes show1 { 0%, 29% { opacity: 1 } 33%, 96% { opacity: 0 } 100% { opacity: 1 } }
+    @keyframes show2 { 0%, 30% { opacity: 0 } 33%, 62% { opacity: 1 } 66%, 100% { opacity: 0 } }
+    @keyframes show3 { 0%, 63% { opacity: 0 } 66%, 96% { opacity: 1 } 100% { opacity: 0 } }
+
+    /* الملف يهبط داخل منطقة الإفلات في الحالة الأولى */
+    .drop { animation: drop 12s infinite linear; }
+    @keyframes drop {
+      0% { transform: translateY(-14px); opacity: 0 }
+      6% { transform: translateY(0); opacity: 1 }
+      24% { transform: translateY(0); opacity: 1 }
+      29%, 100% { transform: translateY(6px); opacity: 0 }
+    }
+
+    /* شريط التقدّم يمتلئ خلال نافذة الحالة الثانية وحدها */
+    .fill { transform-origin: 100% 50%; animation: fill 12s infinite linear; }
+    @keyframes fill { 0%, 33% { transform: scaleX(0.06) } 62%, 100% { transform: scaleX(1) } }
+
+    /* أعمدة الرسم تنمو عند ظهور شاشة النتائج */
+    .bar { transform-origin: 100% 50%; animation: grow 12s infinite linear; }
+    @keyframes grow { 0%, 66% { transform: scaleX(0) } 72%, 100% { transform: scaleX(1) } }
+
+    /* المؤشّر يتوقّف احتراماً لتفضيل تقليل الحركة */
+    @media (prefers-reduced-motion: reduce) {
+      .frame, .drop, .fill, .bar { animation: none }
+      .f2, .f3 { opacity: 0 }
+    }
+
+    text { fill: #eef1f5 }
+    .muted { fill: #a2adbb }
+    .accent { fill: #4fd1bd }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em }
+  </style>
+
+  <!-- إطار النافذة -->
+  <rect width="820" height="470" rx="14" fill="#171b21" stroke="#2b323c" stroke-width="1.5"/>
+
+  <!-- الشريط العلوي -->
+  <rect x="1" y="1" width="818" height="46" rx="13" fill="#1e242c"/>
+  <rect x="1" y="34" width="818" height="13" fill="#1e242c"/>
+  <line x1="1" y1="47" x2="819" y2="47" stroke="#2b323c" stroke-width="1.5"/>
+  <text x="796" y="30" text-anchor="end" font-size="17" font-weight="700">رصيد</text>
+  <text x="772" y="31" text-anchor="end" font-size="18" class="accent">⌾</text>
+  <rect x="24" y="13" width="66" height="22" rx="6" fill="#2b323c"/>
+  <text x="57" y="28" text-anchor="middle" font-size="12" class="muted">English</text>
+
+  <!-- ══════════════ الحالة 1: الاستقبال ══════════════ -->
+  <g class="frame f1">
+    <text x="796" y="90" text-anchor="end" font-size="24" font-weight="700">اكتشف الاشتراكات التي نسيتَ أنك تدفع لها</text>
+    <text x="796" y="118" text-anchor="end" font-size="13" class="muted">ارفع كشف حسابك البنكي بصيغة CSV، وسيبحث رصيد عن الرسوم المتكررة وزيادات الأسعار الصامتة.</text>
+
+    <!-- سطر الخصوصية -->
+    <rect x="24" y="136" width="772" height="58" rx="10" fill="#12312d" stroke="#4fd1bd" stroke-width="1.2"/>
+    <rect x="791" y="136" width="5" height="58" rx="2.5" fill="#4fd1bd"/>
+    <text x="772" y="161" text-anchor="end" font-size="15" font-weight="700">ملفك لا يغادر جهازك — لا يوجد خادم</text>
+    <text x="772" y="182" text-anchor="end" font-size="12" class="muted">لا رفع، ولا حساب مستخدم، ولا تحليلات، ولا طلب شبكة واحد بعد فتح الصفحة.</text>
+    <text x="746" y="163" text-anchor="end" font-size="17" class="accent">⛨</text>
+
+    <!-- منطقة الإفلات -->
+    <rect x="24" y="212" width="772" height="180" rx="12" fill="#1b2129" stroke="#4fd1bd"
+          stroke-width="2" stroke-dasharray="8 6"/>
+
+    <g class="drop">
+      <rect x="381" y="238" width="58" height="42" rx="6" fill="#232b34" stroke="#4fd1bd" stroke-width="1.4"/>
+      <text x="410" y="265" text-anchor="middle" font-size="13" font-weight="700" class="accent">CSV</text>
+    </g>
+
+    <text x="410" y="308" text-anchor="middle" font-size="18" font-weight="600">أفلت ملف CSV هنا</text>
+    <text x="410" y="329" text-anchor="middle" font-size="12.5" class="muted">أو اختر ملفاً من جهازك</text>
+
+    <rect x="424" y="345" width="112" height="34" rx="8" fill="#4fd1bd"/>
+    <text x="480" y="367" text-anchor="middle" font-size="13" font-weight="700" fill="#06231f">اختيار ملف</text>
+    <rect x="284" y="345" width="130" height="34" rx="8" fill="none" stroke="#2b323c" stroke-width="1.4"/>
+    <text x="349" y="367" text-anchor="middle" font-size="13" font-weight="600">جرّب ببيانات تجريبية</text>
+
+    <text x="796" y="424" text-anchor="end" font-size="11.5" class="muted">التنسيقات المدعومة: مصرف الراجحي · البنك الأهلي السعودي · Chase / Bank of America · Emirates NBD</text>
+  </g>
+
+  <!-- ══════════════ الحالة 2: المعالجة ══════════════ -->
+  <g class="frame f2">
+    <text x="410" y="196" text-anchor="middle" font-size="24" font-weight="700">جارٍ التحليل</text>
+    <text x="410" y="222" text-anchor="middle" font-size="13.5" class="muted">داخل جهازك، بلا أي اتصال</text>
+
+    <rect x="180" y="252" width="460" height="10" rx="5" fill="#2b323c"/>
+    <rect class="fill" x="180" y="252" width="460" height="10" rx="5" fill="#4fd1bd"/>
+
+    <text x="640" y="286" text-anchor="end" font-size="12.5" class="muted">البحث عن الأنماط المتكررة</text>
+    <text x="180" y="286" text-anchor="start" font-size="12.5" class="muted num">90٪</text>
+
+    <text x="410" y="342" text-anchor="middle" font-size="12" class="muted">المعالجة تجري في خيط منفصل (Web Worker) فلا تتجمّد الواجهة</text>
+    <rect x="290" y="360" width="240" height="30" rx="8" fill="#12312d" stroke="#2b323c"/>
+    <text x="410" y="380" text-anchor="middle" font-size="11.5" class="accent">طلبات الشبكة: صفر</text>
+  </g>
+
+  <!-- ══════════════ الحالة 3: النتائج ══════════════ -->
+  <g class="frame f3">
+    <text x="796" y="80" text-anchor="end" font-size="20" font-weight="700">النتائج</text>
+    <text x="796" y="101" text-anchor="end" font-size="11.5" class="muted">245 عملية بين يناير 2024 وديسمبر 2024 · التنسيق المكتشف: مصرف الراجحي</text>
+
+    <!-- البطاقات -->
+    <rect x="546" y="116" width="250" height="76" rx="10" fill="#12312d" stroke="#4fd1bd" stroke-width="1.2"/>
+    <text x="776" y="140" text-anchor="end" font-size="11.5" class="muted">الكلفة الشهرية</text>
+    <text x="776" y="172" text-anchor="end" font-size="26" font-weight="700" class="num">517.76 ر.س</text>
+
+    <rect x="285" y="116" width="250" height="76" rx="10" fill="#1e242c" stroke="#2b323c"/>
+    <text x="515" y="140" text-anchor="end" font-size="11.5" class="muted">الكلفة السنوية المتوقعة</text>
+    <text x="515" y="172" text-anchor="end" font-size="26" font-weight="700" class="num">6,213 ر.س</text>
+
+    <rect x="24" y="116" width="250" height="76" rx="10" fill="#1e242c" stroke="#2b323c"/>
+    <text x="254" y="140" text-anchor="end" font-size="11.5" class="muted">اشتراك مكتشف</text>
+    <text x="254" y="172" text-anchor="end" font-size="26" font-weight="700" class="num">9</text>
+
+    <!-- الرسم -->
+    <text x="796" y="222" text-anchor="end" font-size="13.5" font-weight="600">توزيع الكلفة الشهرية</text>
+
+    <text x="796" y="248" text-anchor="end" font-size="11.5">FITNESS TIME</text>
+    <rect class="bar" x="316" y="238" width="352" height="13" rx="3" fill="#4fd1bd"/>
+    <text x="300" y="248" text-anchor="end" font-size="10.5" class="muted num">199.23 ر.س · 38٪</text>
+
+    <text x="796" y="271" text-anchor="end" font-size="11.5">ADOBE CREATIVE CLOUD</text>
+    <rect class="bar" x="457" y="261" width="211" height="13" rx="3" fill="#4fd1bd"/>
+    <text x="441" y="271" text-anchor="end" font-size="10.5" class="muted num">119.19 ر.س · 23٪</text>
+
+    <text x="796" y="294" text-anchor="end" font-size="11.5">CANVA</text>
+    <rect class="bar" x="587" y="284" width="81" height="13" rx="3" fill="#4fd1bd"/>
+    <text x="571" y="294" text-anchor="end" font-size="10.5" class="muted num">45.66 ر.س · 9٪</text>
+
+    <!-- الجدول -->
+    <line x1="24" y1="314" x2="796" y2="314" stroke="#2b323c"/>
+    <text x="796" y="334" text-anchor="end" font-size="10.5" class="muted">التاجر</text>
+    <text x="560" y="334" text-anchor="end" font-size="10.5" class="muted">المبلغ</text>
+    <text x="440" y="334" text-anchor="end" font-size="10.5" class="muted">الدورة</text>
+    <text x="320" y="334" text-anchor="end" font-size="10.5" class="muted">درجة الثقة</text>
+    <text x="140" y="334" text-anchor="end" font-size="10.5" class="muted">ملاحظات</text>
+
+    <line x1="24" y1="343" x2="796" y2="343" stroke="#2b323c"/>
+    <text x="796" y="364" text-anchor="end" font-size="12">＋ ADOBE CREATIVE CLOUD</text>
+    <text x="560" y="364" text-anchor="end" font-size="12" class="num">117.48 ر.س</text>
+    <text x="440" y="364" text-anchor="end" font-size="12">شهري</text>
+    <text x="320" y="364" text-anchor="end" font-size="11" fill="#7bd396">●●● ثقة عالية 97٪</text>
+    <rect x="24" y="352" width="88" height="17" rx="8" fill="#3a1d17" stroke="#ff9c85"/>
+    <text x="68" y="364" text-anchor="middle" font-size="10" fill="#ff9c85">زيادة سعر</text>
+
+    <line x1="24" y1="376" x2="796" y2="376" stroke="#2b323c"/>
+    <text x="796" y="397" text-anchor="end" font-size="12">＋ DISNEYPLUS</text>
+    <text x="560" y="397" text-anchor="end" font-size="12" class="num">29.99 ر.س</text>
+    <text x="440" y="397" text-anchor="end" font-size="12">شهري</text>
+    <text x="320" y="397" text-anchor="end" font-size="11" fill="#7bd396">●●● ثقة عالية 97٪</text>
+    <rect x="24" y="385" width="98" height="17" rx="8" fill="#3a2f16" stroke="#f0c163"/>
+    <text x="73" y="397" text-anchor="middle" font-size="10" fill="#f0c163">تجربة تحوّلت</text>
+
+    <line x1="24" y1="409" x2="796" y2="409" stroke="#2b323c"/>
+    <text x="796" y="430" text-anchor="end" font-size="12">＋ ANGHAMI</text>
+    <text x="560" y="430" text-anchor="end" font-size="12" class="num">19.99 ر.س</text>
+    <text x="440" y="430" text-anchor="end" font-size="12">شهري</text>
+    <text x="320" y="430" text-anchor="end" font-size="11" fill="#7bd396">●●● ثقة عالية 98٪</text>
+
+    <text x="796" y="453" text-anchor="end" font-size="10.5" class="muted">اضغط أي صف لعرض العمليات الأصلية التي بُني عليها الاستنتاج</text>
+  </g>
+</svg>
