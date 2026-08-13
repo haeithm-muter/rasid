@@ -1,3 +1,6 @@
+![CI](https://github.com/haeithm-muter/rasid/workflows/CI/badge.svg)
+![Deploy](https://github.com/haeithm-muter/rasid/workflows/Deploy/badge.svg)
+
 # رصيد (Rasid)
 
 **كاشف الاشتراكات المنسيّة من كشف الحساب البنكي — يعمل داخل متصفحك بالكامل.**
